@@ -1,0 +1,83 @@
+<%- include('../partials/header.ejs') %>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #003C43, #135D66);
+        margin: 0;
+        padding: 0;
+    }
+
+    body:before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom right, #003C43, #135D66, #77B0AA);
+        z-index: -1;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 50px;
+        color: #E3FEF7;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #77B0AA;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .button {
+        width: 100%;
+        font-weight: bold;
+        padding: 10px;
+        background: #E3FEF7;
+        color: #003C43;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin-bottom: 10px; /* Add margin-bottom for spacing */
+    }
+
+    .button:hover {
+        background-color: #135D66;
+    }
+
+    p {
+        color: #E3FEF7;
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+
+    @media screen and (max-width: 600px) {
+        .container {
+            max-width: 300px;
+        }
+    }
+</style>
+
+<body>
+    <h1>Welcome to My Chat Web</h1>
+    <div class="container">
+        <p>
+
+            "Welcome to our Chat App, where connecting with others is made effortless and enjoyable. Our platform offers seamless communication through real-time messaging, group chats, and multimedia sharing, all in one place. Whether you're catching up with friends, collaborating with colleagues, or meeting new people, [Your Chat App Name] provides the perfect space to stay connected. With a user-friendly interface and a host of innovative features, joining our community is as simple as clicking a button. Experience the power of instant communication and meaningful connections with oour Chat App. Sign up today and discover a new way to connect and engage with the world around you."</p>
+        <form action="/login" method="GET">
+            <button class="button" type="submit">Login</button>
+        </form>
+        <form action="/signup" method="GET">
+            <button class="button" type="submit">Signup</button>
+        </form>
+        
+    </div>
+    <%- include('../partials/footer.ejs') %>
+</body>
