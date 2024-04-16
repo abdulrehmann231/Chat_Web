@@ -70,9 +70,12 @@ app.post("/login", async (req, res) => {
   
   try {
     const result = await db.query("SELECT * FROM users WHERE email = $1 AND password = $2", [email, password]);
+    const users = await db.query("SELECT username FROM users");
+    const userList = users.rows.map(user => user.username);
+    console.log(userList);
     if (result.rows.length > 0) {
       console.log("User exists");
-      res.render("chat.ejs",{Friends : friends, username : "Ali", id : 123 , Messages : messages});
+      res.render("chat.ejs",{Friends : friends, username : "Ali", id : 123 , Messages : messages, Users : userList});
     } else {
       res.render("login.ejs", { message: "Invalid credentials" });
     }
