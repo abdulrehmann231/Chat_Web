@@ -307,24 +307,29 @@
                     const messageInput = chatBox.querySelector('input[type="text"]');
                     const message = messageInput.value.trim();
                     if (message !== '') {
-                        // Send message functionality
-                        console.log(`Sending message: ${message}`);
-                        messageInput.value = '';
-
+                        
                         const messageElement = document.createElement('p');
                         messageElement.classList.add('message');
                         messageElement.textContent = message;
                         messageElement.style.textAlign = 'right';
                         chatBody.appendChild(messageElement);
+                        messagesArray.push([message, userId]);
+                        console.log(messagesArray);
+                        
                     }
                 }
             });
+
+
+
+
 
             // Record button event listener
             chatBox.addEventListener('click', function (event) {
                 if (event.target.id === 'recordBtn') {
                     // Record message functionality
                     console.log('Recording message...');
+                    
                 }
             });
         });
