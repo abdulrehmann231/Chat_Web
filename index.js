@@ -10,6 +10,7 @@ const port = 3000;
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.json());
 env.config();
 
 const db = new pg.Client({
@@ -59,8 +60,8 @@ app.post("/signup", async (req, res) => {
 });
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  const friends = ["Ali","Ahmed","Abdullah"];
+  const { email, password } = req.body;    
+  
   const messages = [
     ["Hello",1],
     ["How are you?",2],
@@ -69,16 +70,38 @@ app.post("/login", async (req, res) => {
   ];
   
   try {
-    const result = await db.query("SELECT * FROM users WHERE email = $1 AND password = $2", [email, password]);
+    const result = await db.query("SELECT id,username FROM users WHERE email = $1 AND password = $2", [email, password]);
+    let ID = result.rows[0].id ;
+    let username = result.rows[0].username;
+    
     const users = await db.query("SELECT username FROM users");
+    let friends = await db.query("SELECT username,users.id FROM users,friends WHERE friends.recieverid = users.id OR friends.senderid = users.id AND users.id != $1", [ID]);
+    friends = friends.rows;
+    
+    friends = friends.map(friend => [friend.username,friend.id]);
+    console.log(friends);
+
     const userList = users.rows.map(user => user.username);
-    console.log(userList);
+    //console.log(userList);
     if (result.rows.length > 0) {
+      
+      
       console.log("User exists");
-      res.render("chat.ejs",{Friends : friends, username : "Ali", id : 123 , Messages : messages, Users : userList});
+      res.render("chat.ejs",{Friends : friends, username : "Ali", id : ID , Messages : messages, Users : userList});
     } else {
       res.render("login.ejs", { message: "Invalid credentials" });
     }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+//saving message to database
+app.post("/sendMessage", async (req, res) => { 
+  try {
+      
+    const {Message, UserId, friendName, friendID} = req.body;
+    console.log(Message, UserId, friendName, friendID);
   } catch (error) {
     console.log(error);
   }

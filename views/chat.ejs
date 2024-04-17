@@ -240,13 +240,23 @@
             let messages = JSON.stringify('<%= Messages %>'); // Messages passed from the server
             messages = JSON.parse(messages);
             messages = messages.split(',');
+            friends = JSON.parse(friends);
+            friends = friends.split(",");
             console.log(messages);
+            console.log(friends);
             let messagesArray = [];
+            let frindsArray=[];
             for (i = 0; i < (messages.length) / 2; i++) {
                 messagesArray.push([messages[i * 2], messages[i * 2 + 1]]);
             }
+            for(i=0;i<(friends.length)/2;i++)
+            {
+                frindsArray.push([friends[i * 2], friends[i * 2 + 1]]);
+            }
+            console.log("test");
             console.log(messagesArray);
-            friends = JSON.parse(friends);
+            console.log(frindsArray);
+            //friends = JSON.parse(friends);
             // Function to show chat box
             function showChatBox() {
                 chatBox.style.display = 'block';
@@ -268,6 +278,7 @@
                     } else {
                         messageElement.style.textAlign = 'left';
                     }
+                
 
                     chatBody.appendChild(messageElement);
                 }
@@ -276,16 +287,26 @@
             }
 
             // Parse the friends list
-            friends = friends.split(',');
+            //friends = friends.split(',');
 
             // Populate chat list
-            friends.forEach(friend => {
+           // friends.forEach(friend => {
+             //   const chatItem = document.createElement('p');
+               // chatItem.classList.add('chat-item');
+               // chatItem.textContent = friend;
+                //chatItem.addEventListener('click', () => populateChatBox(friend, messages));
+                //chatsList.appendChild(chatItem);
+            //});
+            for( let i=0; i<frindsArray.length;i++){
                 const chatItem = document.createElement('p');
                 chatItem.classList.add('chat-item');
-                chatItem.textContent = friend;
-                chatItem.addEventListener('click', () => populateChatBox(friend, messages));
+                chatItem.textContent = frindsArray[i][0];
+                console.log(frindsArray[i][0]);
+                //error on this line login:304 Uncaught TypeError: Cannot read properties of undefined (reading '0')
+                //at HTMLParagraphElement.<anonymous> (login:306:88)
+                chatItem.addEventListener('click', () => populateChatBox(frindsArray[i][0], messages));
                 chatsList.appendChild(chatItem);
-            });
+            }
 
             // Call log button event listener
             document.getElementById('callLogBtn').addEventListener('click', () => {
@@ -313,8 +334,33 @@
                         messageElement.textContent = message;
                         messageElement.style.textAlign = 'right';
                         chatBody.appendChild(messageElement);
-                        messagesArray.push([message, userId]);
-                        console.log(messagesArray);
+
+                        
+                        //messagesArray.push([message, userId]);
+                        //console.log(messagesArray);
+                        messageInput.value = '';
+                        let id=0;
+                        for(let j=0;j<frindsArray.length;j++){
+                            if(friendNameElement.textContent === frindsArray[j][0])
+                            {
+                                id = frindsArray[j][1];
+                                break;
+                            }
+
+                        }
+                        console.log(message,userId,friendNameElement.textContent,id);
+                        fetch('/sendMessage', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                Message: message,
+                                UserId: userId,
+                                friendName: friendNameElement.textContent,
+                                friendID: id,
+                            }),
+                        });
                         
                     }
                 }
