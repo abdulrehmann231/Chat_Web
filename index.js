@@ -61,14 +61,14 @@ app.post("/signup", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;    
-  
+
   const messages = [
     ["Hello",1],
     ["How are you?",2],
     ["I am fine",123],
     ["How are you?",123],
   ];
-  
+  //database check needed : TODO
   try {
     const result = await db.query("SELECT id,username FROM users WHERE email = $1 AND password = $2", [email, password]);
     let ID = result.rows[0].id ;
