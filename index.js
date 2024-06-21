@@ -50,7 +50,7 @@ app.post("/signup", async (req, res) => {
     if (checkResult.rows.length > 0) {
       res.render("signup.ejs", { message: "User already exists , Try loggin in!" });
     } else {
-      const result = await db.query("INSERT INTO users(username,email,password) VALUES($1,$2,$3)", [username, email, password]);
+      const result = await db.query("INSERT INTO users(username,email,passwordhash) VALUES($1,$2,$3)", [username, email, password]);
       console.log(result);
       res.render("login.ejs");
     }
@@ -68,26 +68,47 @@ app.post("/login", async (req, res) => {
     ["I am fine",123],
     ["How are you?",123],
   ];
+  const chats =[
+    ["Ahmed",1],
+    ["zoro",2],
+    ["kijo",3],
+  ];
   //database check needed : TODO
   try {
-    const result = await db.query("SELECT id,username FROM users WHERE email = $1 AND password = $2", [email, password]);
-    let ID = result.rows[0].id ;
+    const result = await db.query("SELECT userid,username FROM users WHERE email = $1 AND passwordhash = $2", [email, password]);
+    let ID = result.rows[0].userid;
     let username = result.rows[0].username;
     
-    const users = await db.query("SELECT username FROM users");
-    let friends = await db.query("SELECT username,users.id FROM users,friends WHERE friends.recieverid = users.id OR friends.senderid = users.id AND users.id != $1", [ID]);
-    friends = friends.rows;
+    // const users = await db.query("SELECT username,id FROM users");
+    // let friends = await db.query("SELECT username,users.id FROM users,friends WHERE friends.recieverid = users.id OR friends.senderid = users.id AND users.id != $1", [ID]);
+    // friends = friends.rows;
     
-    friends = friends.map(friend => [friend.username,friend.id]);
-    console.log(friends);
+    // let chats = await db.query("Select * from conversation where creator = $1 OR chatterid = $2" , [ID,ID]);
+    // chats = chats.rows;
+    // let NumOfChats = chats.rowCount;
+    // let ChatArrays =[];
+    // for(let i=0;i < NumOfChats;i++)
+    // {
+       
+    // }
 
-    const userList = users.rows.map(user => user.username);
-    //console.log(userList);
+    // friends = friends.map(friend => [friend.username,friend.id]);
+    let friends=["ali","ahmed","abdullah"];
+    
+    // console.log(friends);
+
+    // const userList = users.rows.map(user => user.username);
+    // console.log(userList);
+    // let userList=[];
+    // for(let j=0;j< users.rowCount;j++){
+    //   userList.push([users.rows[j].username,users.rows[j].id])
+    // }
     if (result.rows.length > 0) {
       
       
       console.log("User exists");
-      res.render("chat.ejs",{Friends : friends, username : "Ali", id : ID , Messages : messages, Users : userList});
+      res.render("chat.ejs",{Friends : friends, username : "Ali", id : ID , Messages : messages, Chats : chats });
+      //res.render("chat.ejs");
     } else {
       res.render("login.ejs", { message: "Invalid credentials" });
     }
