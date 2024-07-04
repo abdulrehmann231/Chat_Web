@@ -44,13 +44,17 @@
         background-color: #135D66;
     }
 
-    #userbar {
-        margin-top: 10px;
+    .userbar {
+        flex: none;
         display: flex;
         justify-content: space-between;
         align-items: center;
         width: 100%;
         box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+    }
+    .currentuserbar{
+       
+        margin-left: 1%;
     }
 
     #name {
@@ -59,8 +63,17 @@
         font-size: 24px;
         font-weight: bold;
         text-transform: uppercase;
+        text-shadow: 4px 4px 4px rgba(94, 230, 223, 0.2);
+    }
+    h2{
+        color: #003C43;
+        text-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
+        font-size: 24px;
+        font-weight: bold;
+        text-transform: uppercase;
     }
 
+    
     .chats, .chat-box {
         margin-top: 15px;
         box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
@@ -69,7 +82,7 @@
         margin-bottom: 2%;
         background-color: beige;
         width: 48%;
-        overflow-y: auto;
+        border-radius: 10px;
     }
 
     .chats {
@@ -78,11 +91,16 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        height: 90%;
+        overflow-y: auto;
     }
 
     .chat-box {
+        display: flex;
+        flex-direction: column;
         background-color: aquamarine;
         width: 69%;
+        height: 90%;
     }
 
     .container {
@@ -94,7 +112,7 @@
         width: auto;
     }
 
-    #friends, #calls {
+    #friends{
         flex: none;
     }
     ul{
@@ -120,15 +138,90 @@
     li:hover {
         background-color: #135D66;
     }
-</style>
+    .hidden{
+        display: none;
+    }
+    .messagesarea{
+       
+        overflow-y: auto;
+        background-color: #E3FEF7;
+        margin: 1%;
+        padding: 2%;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        flex: 1;
 
+    }
+    .sendarea{
+     flex: none; /* Ensures the sendarea doesn't shrink or grow */
+     display: flex;
+     align-items: center;
+     margin-left: 1%;
+     
+     margin-bottom: 0.5%;
+     padding-bottom: 10px; /* Adjust to suit design */
+    }
+    input[type="text" i]{
+        flex: 1;
+     
+        border-radius: 10px;
+        padding: 2%;
+        margin-right: 1%;
+    }
+    .button-container{
+        display:flex;
+        flex-wrap: nowrap;
+    }
+    @media screen and (max-width: 640px) {
+        .messagesarea{
+            height: 73%;
+        }
+        .chats{
+            display: none;
+        }
+        .chat-box{
+            width: 98%;
+        }
+        .sendarea{
+            bottom: 0%;
+        }
+        .hidden{
+            display: block;
+        }
+        
+        
+    }
+   
+</style>
+</head>
 <body>
   <div id="top">
-    <div id="userbar"> 
+    <div class="userbar"> 
         <h2 id="name"><%= username %></h2>
-        <div>
-            <button class="button" id="friends">Friends</button>
-            <button class="button" id="calls">Call Logs</button>
+        <div class="button-container">
+            <button class="button" id="chatbutton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chat-left-text-fill" viewBox="0 0 16 16">
+                  <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4.414a1 1 0 0 0-.707.293L.854 15.146A.5.5 0 0 1 0 14.793zm3.5 1a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h9a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+                </svg>
+            </button>
+            <button class="button" id="friends">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-people" viewBox="0 0 16 16">
+                   <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1zm-7.978-1L7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002-.014.002zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0M6.936 9.28a6 6 0 0 0-1.23-.247A7 7 0 0 0 5 9c-4 0-5 3-5 4q0 1 1 1h4.216A2.24 2.24 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816M4.92 10A5.5 5.5 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0m3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/>
+                </svg>
+            </button>
+            
+            <button class="button" id="reqbutton">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-fill-add" viewBox="0 0 16 16">
+                  <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                  <path d="M2 13c0 1 1 1 1 1h5.256A4.5 4.5 0 0 1 8 12.5a4.5 4.5 0 0 1 1.544-3.393Q8.844 9.002 8 9c-5 0-6 3-6 4"/>
+                </svg>
+            </button>
+            <button class="button" id="logout">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-box-arrow-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M6 12.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-8a.5.5 0 0 0-.5.5v2a.5.5 0 0 1-1 0v-2A1.5 1.5 0 0 1 6.5 2h8A1.5 1.5 0 0 1 16 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 5 12.5v-2a.5.5 0 0 1 1 0z"/>
+                    <path fill-rule="evenodd" d="M.146 8.354a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L1.707 7.5H10.5a.5.5 0 0 1 0 1H1.707l2.147 2.146a.5.5 0 0 1-.708.708z"/>
+                  </svg>
+            </button>
         </div>
     </div>
   </div>
@@ -136,29 +229,64 @@
   <div class="container">
     <div class="chats">
         <h2>Chats</h2>
-        <ul>
-            
-            <% for(let i=0; i<Chats.length; i++) { %>
-                <li id="<%= Chats[i][1] %>"><%= Chats[i][0] %></li>
-            <% } %>
-        </ul>
+        <form id="myForm" action="/getchat" method="GET">
+            <ul>
+                <% for(let i=0; i<Chats.length; i++) { %>
+                    <li id="<%= Chats[i][1] %>"><%= Chats[i][0] %></li>
+                <% } %>
+            </ul>
+            <input type="hidden" id="itemId" name="item" value="">    
+        </form>
     </div>
-    <div class="chat-box"></div>
+    <div class="chat-box">
+    <div class="userbar" >
+        <h2 class="currentuserbar">CurrentChat </h2>
+        <div>
+            <button class="button" id="call">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-telephone-fill" viewBox="0 0 16 16">
+                 <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z"/>
+                </svg>
+           </button>
+        </div>
+
+    </div>
+    <div class="messagesarea"></div>
+    <div class="sendarea">
+        <input type="text" id="message" placeholder="Type your message here">
+        <button class="button" id="send">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send-fill" viewBox="0 0 16 16">
+              <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/>
+            </svg>
+        </button>
+        <button class="button" id="record">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16">
+                <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z"/>
+                <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5"/>
+             </svg>
+        </button>
+    </div>
+      </div>
   </div>
 
   <%- include('../partials/footer') %>
 </body>
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector("#chatbutton").classList.add("hidden");
+
+    });
     document.getElementById("friends").addEventListener('click', () => {
+       
         console.log("friends");
     });
-    document.getElementById("calls").addEventListener('click', () => {
-        console.log("calls");
-    });
+    
     
    <%   for(let i=0; i< Chats.length; i++) { %>
     document.getElementById("<%= Chats[i][1] %>").addEventListener('click',()=>{
-        console.log("chats");
+        document.querySelector(".chat-box").classList.remove("hidden");
+        document.getElementById('itemId').value = <%= Chats[i][1] %> ;
+        document.getElementById('myForm').submit();
+        //console.log("chats");
       });
 <% } %>
     

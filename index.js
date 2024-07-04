@@ -76,12 +76,33 @@ app.post("/login", async (req, res) => {
   //database check needed : TODO
   try {
     const result = await db.query("SELECT userid,username FROM users WHERE email = $1 AND passwordhash = $2", [email, password]);
-    let ID = result.rows[0].userid;
-    let username = result.rows[0].username;
     
-    // const users = await db.query("SELECT username,id FROM users");
-    // let friends = await db.query("SELECT username,users.id FROM users,friends WHERE friends.recieverid = users.id OR friends.senderid = users.id AND users.id != $1", [ID]);
-    // friends = friends.rows;
+    if (result.rows.length > 0) {
+      let ID = result.rows[0].userid;
+      let username = result.rows[0].username;
+      //let friends=["ali","ahmed","abdullah"];
+      let users = await db.query("SELECT userid, username FROM users");
+      users = users.rows;
+      users = users.map(user => [user.username,user.userid]);
+      console.log(users);
+      
+      console.log("User exists");
+      let friends = await db.query("SELECT u.UserID, u.Username FROM Users u JOIN Friends f ON (u.UserID = f.UserID1 OR u.UserID = f.UserID2) WHERE (f.UserID1 = $1 OR f.UserID2 = $1) AND u.UserID != $1;", [ID]);
+      friends = friends.rows;
+      friends = friends.map(friend => [friend.username,friend.userid]);
+      console.log(friends);
+
+      
+      
+      console.log("User exists");
+      res.render("chat.ejs",{Friends : friends, username : username, id : ID , Messages : messages, Chats : chats });
+      
+    } else {
+      res.render("login.ejs", { message: "Invalid credentials" });
+    }
+    
+ 
+    
     
     // let chats = await db.query("Select * from conversation where creator = $1 OR chatterid = $2" , [ID,ID]);
     // chats = chats.rows;
@@ -92,8 +113,8 @@ app.post("/login", async (req, res) => {
        
     // }
 
-    // friends = friends.map(friend => [friend.username,friend.id]);
-    let friends=["ali","ahmed","abdullah"];
+    
+   
     
     // console.log(friends);
 
@@ -103,20 +124,17 @@ app.post("/login", async (req, res) => {
     // for(let j=0;j< users.rowCount;j++){
     //   userList.push([users.rows[j].username,users.rows[j].id])
     // }
-    if (result.rows.length > 0) {
-      
-      
-      console.log("User exists");
-      res.render("chat.ejs",{Friends : friends, username : "Ali", id : ID , Messages : messages, Chats : chats });
-      //res.render("chat.ejs");
-    } else {
-      res.render("login.ejs", { message: "Invalid credentials" });
-    }
+
   } catch (error) {
     console.log(error);
   }
 });
 
+app.get("/getchat", (req,res)=>{
+  console.log("getchat");
+  //res.render("chat.ejs",{Friends : friends, username : username, id : ID , Messages : messages, Chats : chats });
+  //res.send("Hello");
+});
 //saving message to database
 app.post("/sendMessage", async (req, res) => { 
   try {

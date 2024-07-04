@@ -28,10 +28,7 @@ CREATE TABLE ChatMembers (
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
     JoinedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-CREATE TABLE MessageTypes (
-    MessageTypeID SERIAL PRIMARY KEY,
-    TypeName VARCHAR(50) NOT NULL UNIQUE  -- Values could be 'text' or 'voice'
-);
+
 
 -- Table to store messages
 CREATE TABLE Messages (
@@ -44,7 +41,7 @@ CREATE TABLE Messages (
     SentAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ChatID) REFERENCES Chats(ChatID) ON DELETE CASCADE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
-    FOREIGN KEY (MessageTypeID) REFERENCES MessageTypes(MessageTypeID)
+    
 );
 CREATE TABLE VideoCalls (
     VideoCallID SERIAL PRIMARY KEY,
