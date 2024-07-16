@@ -229,11 +229,11 @@
   <div class="container">
     <div class="chats">
         <h2>Chats</h2>
-        <form id="myForm" action="/getchat" method="GET">
+        <form id="myForm" action="/user/<%= id %>/chat/:chatId" method="GET">
             <ul>
-                <% for(let i=0; i<Chats.length; i++) { %>
-                    <li id="<%= Chats[i][1] %>"><%= Chats[i][0] %></li>
-                <% } %>
+            <% for(let i=0; i<Chats.length; i++) { %>
+                <li id="<%= Chats[i][1] %>"><%= Chats[i][0] %></li>
+            <% } %>
             </ul>
             <input type="hidden" id="itemId" name="item" value="">    
         </form>
@@ -283,9 +283,15 @@
     
    <%   for(let i=0; i< Chats.length; i++) { %>
     document.getElementById("<%= Chats[i][1] %>").addEventListener('click',()=>{
+        
         document.querySelector(".chat-box").classList.remove("hidden");
-        document.getElementById('itemId').value = <%= Chats[i][1] %> ;
-        document.getElementById('myForm').submit();
+        var chatId = "<%= Chats[i][1] %>";
+        console.log(chatId);
+        var form = document.getElementById("myForm");
+        var action = form.getAttribute("action");
+        form.setAttribute("action", action.replace(":chatId", chatId));
+        document.getElementById("itemId").value = chatId;
+         form.submit();
         //console.log("chats");
       });
 <% } %>
