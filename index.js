@@ -2,9 +2,13 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import path from 'path';
 import dotenv from 'dotenv';
- import pg from 'pg';
-import session from 'express-session';
+import pg from 'pg';
 import bcrypt from 'bcrypt';
+import multer from 'multer';
+import { WebSocketServer, WebSocket } from 'ws';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+import { METHODS } from 'http';
 
 dotenv.config();
 
@@ -16,11 +20,7 @@ const port = 3000;
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true
-}));
+app.use(cookieParser());
 
 // Database configuration
 const db = new pg.Client({
@@ -40,6 +40,28 @@ db.connect(err => {
 });
 
 // Utility functions
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1000000 }, // Limit size to 1MB
+  fileFilter: (req, file, cb) => {
+    checkFileType(file, cb);
+  }
+});
+
+// Check file type
+function checkFileType(file, cb) {
+  const filetypes = /wav/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Audio files only!');
+  }
+}
+
 const formatDate = dateStr => {
   const date = new Date(dateStr);
   const options = {
@@ -57,18 +79,47 @@ const formatDate = dateStr => {
 
 const getFriends = async userId => {
   const friends = await db.query(`
-    SELECT u.UserID, u.Username 
-    FROM Users u 
-    JOIN Friends f ON (u.UserID = f.UserID1 OR u.UserID = f.UserID2) 
-    WHERE (f.UserID1 = $1 OR f.UserID2 = $1) 
-    AND u.UserID != $1`, [userId]);
+    SELECT u.userid, u.username 
+    FROM users u 
+    JOIN friends f ON (u.userid = f.userid1 OR u.userid = f.userid2) 
+    WHERE (f.userid1 = $1 OR f.userid2 = $1) 
+    AND u.userid != $1`, [userId]);
   return friends.rows.map(friend => [friend.username, friend.userid]);
+};
+
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.userid,
+      username: user.username
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+};
+
+const verifyToken = (token) => {
+  return jwt.verify(token, process.env.JWT_SECRET);
+};
+
+const authenticateToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.redirect('/login');
+
+  try {
+    const user = verifyToken(token);
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.redirect('/login');
+  }
 };
 
 // Routes
 app.get('/', (req, res) => {
   res.render('homepage.ejs');
 });
+
 
 app.get('/login', (req, res) => {
   res.render('login.ejs');
@@ -78,6 +129,16 @@ app.get('/signup', (req, res) => {
   res.render('signup.ejs');
 });
 
+app.get('/logout', (req, res) => {
+  console.log('Logging out1');
+  res.clearCookie('token');
+  console.log('Logging out2');
+  res.clearCookie('userData');
+  console.log('Logging out3');
+  res.redirect('/');// it doesnt redirect
+});
+
+
 app.post('/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
@@ -86,8 +147,25 @@ app.post('/signup', async (req, res) => {
       res.render('signup.ejs', { message: 'User already exists, try logging in!' });
     } else {
       const hashedPassword = await bcrypt.hash(password, 10);
-      await db.query('INSERT INTO users(username,email,passwordhash) VALUES($1,$2,$3)', [username, email, hashedPassword]);
-      res.render('login.ejs');
+      const result = await db.query('INSERT INTO users(username, email, passwordhash) VALUES($1, $2, $3) RETURNING *', [username, email, hashedPassword]);
+      const user = result.rows[0];
+      const token = generateToken(user);
+      res.cookie('token', token, { httpOnly: true });
+
+      const friends = await getFriends(user.userid);
+      const users = await db.query('SELECT userid, username FROM users');
+      const chats = [['Ahmed', 6], ['zoro', 2], ['kijo', 3]];
+
+      const userData = {
+        Friends: friends,
+        username: user.username,
+        id: user.userid,
+        Users: users.rows.map(u => [u.username, u.userid]),
+        Chats: chats
+      };
+
+      res.cookie('userData', JSON.stringify(userData), { httpOnly: true });
+      res.redirect('/chat');
     }
   } catch (error) {
     console.error(error);
@@ -97,24 +175,30 @@ app.post('/signup', async (req, res) => {
 
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  const chats = [['Ahmed', 6], ['zoro', 2], ['kijo', 3]];
 
   try {
-    const result = await db.query('SELECT userid,username,passwordhash FROM users WHERE email = $1', [email]);
+    const result = await db.query('SELECT userid, username, passwordhash FROM users WHERE email = $1', [email]);
     if (result.rows.length > 0) {
       const user = result.rows[0];
       const isMatch = await bcrypt.compare(password, user.passwordhash);
       if (isMatch) {
+        const token = generateToken(user);
+        res.cookie('token', token, { httpOnly: true });
+
+        const friends = await getFriends(user.userid);
         const users = await db.query('SELECT userid, username FROM users');
+        const chats = [['Ahmed', 6], ['zoro', 2], ['kijo', 3]];
+
         const userData = {
-          Friends: await getFriends(user.userid),
+          Friends: friends,
           username: user.username,
           id: user.userid,
           Users: users.rows.map(u => [u.username, u.userid]),
           Chats: chats
         };
-        req.session.userData = userData;
-        res.render('chat.ejs', userData);
+
+        res.cookie('userData', JSON.stringify(userData), { httpOnly: true });
+        res.redirect('/chat');
       } else {
         res.render('login.ejs', { message: 'Invalid credentials' });
       }
@@ -127,37 +211,94 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/sendMessage', async (req, res) => {
-  const { Message, UserId, friendName, friendID } = req.body;
+app.get('/chat', authenticateToken, (req, res) => {
+  const userData = JSON.parse(req.cookies.userData);
+  res.render('chat.ejs', userData);
+});
+
+app.post('/sendMessage', upload.single('audio'), authenticateToken, async (req, res) => {
+  const chatId = req.body.chatId;
+  const userId = req.body.userId;
+  const text = req.body.texttContent;
+  let audioBuffer = null;
+
+  if (!text && !req.file) {
+    return res.status(400).send('Error: No message content provided!');
+  }
+
   try {
-    console.log(Message, UserId, friendName, friendID);
-    // Add logic to save the message to the database
+    if (text === 'null') {
+      audioBuffer = req.file.buffer;
+    }
+
+    const query = 'INSERT INTO messages (chatid, userid, textcontent, voicecontent) VALUES ($1, $2, $3, $4) RETURNING messageid';
+    const result = await db.query(query, [chatId, userId, text, audioBuffer]);
+
+    const savedMessage = {
+      messageId: result.rows[0].messageid,
+      userId,
+      text,
+      audioBase64: audioBuffer ? audioBuffer.toString('base64') : null,
+      sentAt: formatDate(new Date())
+    };
+
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify(savedMessage));
+      }
+    });
+
+    res.send(`File uploaded and saved with ID: ${result.rows[0].messageid}`);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
   }
 });
 
-app.get('/user/:userId/chat/:chatId', async (req, res) => {
+app.get('/user/:userId/chat/:chatId', authenticateToken, async (req, res) => {
   const { userId, chatId } = req.params;
-  try {
-    let messages = await db.query('SELECT messageid,userid,textcontent,voicecontent,sentat FROM messages WHERE chatid = $1 ORDER BY sentat ASC', [chatId]);
-    const messagesArray = messages.rows.map(message => [
-      message.messageid,
-      message.userid,
-      message.textcontent,
-      message.voicecontent,
-      formatDate(message.sentat)
-    ]);
 
-    const { Friends, username, id, Users, Chats } = req.session.userData;
-    res.render('chat.ejs', { Friends, username, id, Users, Chats, messages: messagesArray });
+  try {
+    const messages = await db.query('SELECT messageid, userid, textcontent, voicecontent, sentat FROM messages WHERE chatid = $1 ORDER BY sentat ASC', [chatId]);
+
+    const messagesArray = messages.rows.map(message => {
+      let audioBase64 = null;
+      if (message.voicecontent) {
+        audioBase64 = Buffer.from(message.voicecontent).toString('base64');
+      }
+      
+      return [
+        message.messageid,
+        message.userid,
+        message.textcontent,
+        audioBase64,
+        formatDate(message.sentat)
+      ];
+    });
+
+    const userData = JSON.parse(req.cookies.userData);
+    res.json({ ...userData, messages: messagesArray });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
   }
 });
 
-app.listen(port, () => {
+// Express server
+const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+});
+
+// WebSocket server
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', ws => {
+  console.log('client connected');
+  // ws.on('message', message => {
+  //   console.log(`Received message => ${message}`);
+  //   ws.send('Hello! Message received.');
+  // });
+  ws.on('close', () => {
+    console.log('client disconnected');
+  });
 });

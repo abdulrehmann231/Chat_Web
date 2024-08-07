@@ -1,4 +1,5 @@
 <%- include('../partials/header.ejs') %>
+<link rel="shortcut icon" href="#" />
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -43,7 +44,18 @@
     .button:hover {
         background-color: #135D66;
     }
+    .friends-box{
+        
+        display: flex;
+        flex-direction: column;
+        width: 50%;
+        height: 20vh;
+        background-color: beige;
+    }
+    .friend-li{
+        display: flex;
 
+    }
     .userbar {
         flex: none;
         display: flex;
@@ -225,18 +237,30 @@
         </div>
     </div>
   </div>
+  <div class="friends-box hidden">
+    <button class="button" id="close">Close</button>
+    <ul>
+        <% if(Friends) { %>
+        
+        <% for(let i=0; i<Friends.length; i++) { %>
+            <div class="friend-li">
+            <li id="<%= Friends[i][1] %>"><%= Friends[i][0] %></li>
+            <button class="button" id="add">Add</button>
+            </div>
+        <% } } %>
+        </ul>
+  </div>
 
   <div class="container">
     <div class="chats">
         <h2>Chats</h2>
-        <form id="myForm" action="/user/<%= id %>/chat/:chatId" method="GET">
+        
             <ul>
             <% for(let i=0; i<Chats.length; i++) { %>
                 <li id="<%= Chats[i][1] %>"><%= Chats[i][0] %></li>
             <% } %>
             </ul>
-            <input type="hidden" id="itemId" name="item" value="">    
-        </form>
+        
     </div>
     <div class="chat-box">
     <div class="userbar" >
@@ -250,7 +274,28 @@
         </div>
 
     </div>
-    <div class="messagesarea"></div>
+    <div class="messagesarea">
+        <% if(typeof someVariable !== 'undefined'){ %>
+        <% messages.forEach(function(message) { %>
+            <div class="message">
+              <% if (message[2]) { %>
+                <div class="text-message"><%= message[2] %></div>
+              <% } %>
+          
+              <% if (message[3]) { %>
+                <div class="voice-message">
+                  <audio controls>
+                    <source src="data:audio/wav;base64,<%= message[3] %>" type="audio/wav">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              <% } %>
+          
+              <div class="sent-at"><%= message[4] %></div>
+            </div>
+          <% }); } %>
+          
+    </div>
     <div class="sendarea">
         <input type="text" id="message" placeholder="Type your message here">
         <button class="button" id="send">
@@ -259,11 +304,19 @@
             </svg>
         </button>
         <button class="button" id="record">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16" >
                 <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z"/>
                 <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5"/>
              </svg>
-        </button>
+        </button >     
+        <button class="button" id="stop">
+             <svg  width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" >
+                <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="currentColor"/>
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" fill="currentColor"/>
+            </svg>
+        </button>    
+
+        
     </div>
       </div>
   </div>
@@ -271,28 +324,211 @@
   <%- include('../partials/footer') %>
 </body>
 <script>
+    let start=false;
+    let userid;
+    let chatId;
+    let audioChunks =[];
+    let mediaRecorder;
+    let socket;
+ 
+    // event listerner for load
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelector("#chatbutton").classList.add("hidden");
+        document.querySelector("#stop").classList.add("hidden");
+        
+        //console.log("hidden");
+        
+        socket = new WebSocket('ws://localhost:3000'); // Replace with your WebSocket server URL
+
+        // Handle WebSocket events
+        socket.addEventListener('open', () => {
+            console.log('WebSocket connection opened');
+        });
+
+        socket.addEventListener('message', event => {
+
+            const data = JSON.parse(event.data);
+            console.log(data);
+            if (data.text) {
+                // Update the chat box with the new message
+                const messageElement = createMessageElement([data.messageId,data.userId, data.text, data.audioBase64,data.sentAt]);
+                document.querySelector('.messagesarea').appendChild(messageElement);
+            }
+        });
+
+        socket.addEventListener('close', () => {
+            console.log('WebSocket connection closed');
+        });
+
+        socket.addEventListener('error', error => {
+            console.error('WebSocket error:', error);
+        });
 
     });
+
+    document.getElementById("logout").addEventListener('click', () => {
+        fetch('/logout');
+    });
+
     document.getElementById("friends").addEventListener('click', () => {
        
+        document.querySelector(".friends-box").classList.remove("hidden");
         console.log("friends");
     });
+
+    //for record
+    document.getElementById("record").addEventListener('click', async () => {
+       try{
+           // console.log(mediaRecorder);
+           const audioPlayback = document.createElement('audio');
+           document.querySelector('.messagesarea').appendChild(audioPlayback);
+            
+            document.getElementById("record").classList.add("hidden");
+            document.getElementById("stop").classList.remove("hidden");
+           
+
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);    
+            
+            mediaRecorder.start();
+           // console.log(mediaRecorder);
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayback.src = audioUrl;
+        
+                // Send audioBlob and userId to the server
+                //console.log(userid, chatId);
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.wav');
+                formData.append('userId', userid);  // Append user ID
+                formData.append('texttContent', 'null');  // Append message
+                formData.append('chatId', chatId);  // Append chat ID
+                fetch('/sendMessage', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.text())
+                  .then(text => {
+                      //console.log('Audio uploaded successfully:', text);
+                  }).catch(error => {
+                      console.error('Error uploading audio:', error);
+                  });
+        
+                audioChunks = [];
+            };
+        //console.log(mediaRecorder);
+        }
+    catch(err){
+        console.error('Error recording audio:', err);
+    }
+        
+    });
+
+    document.getElementById('stop').addEventListener('click', () => {
+        //console.log(mediaRecorder);
+        mediaRecorder.stop();
+        document.getElementById("record").classList.remove("hidden");
+        document.getElementById("stop").classList.add("hidden");
+    });
+    
+    //sending text message
+    document.getElementById('send').addEventListener('click', () => {
+      const inputmessage = document.getElementById('message').value;
+      if(inputmessage == 'null' || inputmessage == '')
+      {
+            alert("Please enter a message");
+        }
+        else{
+            const formData = new FormData();
+            formData.append('audio', 'null');  // Append audio
+            formData.append('userId', userid);  // Append user ID
+            formData.append('texttContent', inputmessage);  // Append message
+            formData.append('chatId', chatId);  // Append chat ID
+            fetch('/sendMessage', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.text())
+            .then(text => {
+                //console.log('Message sent successfully:', text);
+                inputmessage.value = '';
+            }).catch(error => {
+                console.error('Error sending message:', error);
+            });
+      }
+    });
+
+    function fetchMessages(chatId,userid) {
+        //console.log(userid + "  " + chatId);
+        fetch(`/user/${userid}/chat/${chatId}`)
+          .then(response => response.json())
+          .then(data => {
+            // Clear existing messages
+            document.querySelector('.messagesarea').innerHTML = '';
+            //console.log(messages);
+            //console.log("printing response");
+            //console.log(data.messages);
+    
+            // Append fetched messages to messagesarea
+            data.messages.forEach(message => {
+                //console.log(message);
+                //console.log(message[0]);
+              const messageElement = createMessageElement(message);
+              document.querySelector('.messagesarea').appendChild(messageElement);
+            });
+          })
+          .catch(error => console.error('Error fetching messages:', error));
+      }
+    
+      function createMessageElement(message) {
+        console.log(message);
+        // Create message element based on message type (text or voice)
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message');
+        messageElement.style.margin = "1%";
+        messageElement.style.padding = "2%";
+        messageElement.style.borderRadius = "10px";
+        messageElement.style.backgroundColor = "#E3FEF7";
+        messageElement.style.color = "#003C43";
+        messageElement.style.boxShadow = "2px 2px 4px rgba(0, 0, 0, 0.3)";
+        messageElement.style.transition = "background-color 0.3s ease";
+        messageElement.style.marginBottom = "10px";
+        
+        if(message[1]==userid){
+            messageElement.style.textAlign = "right";
+        }
+        else{
+            messageElement.style.textAlign = "left";
+        }
+        if (message[3] === null || message[3] ==='null')  {
+          messageElement.innerHTML = `<div class="text-message">${message[2]}</div>`;
+        } else if (message[2] === null || message[2] === 'null') {
+          messageElement.innerHTML = `
+            <div class="voice-message">
+              <audio controls>
+                <source src="data:audio/wav;base64,${message[3]}" type="audio/wav">
+                Your browser does not support the audio element.
+              </audio>
+            </div>`;
+        }
+    
+        messageElement.innerHTML += `<div class="sent-at">${message[4]}</div>`;
+        return messageElement;
+      }
     
     
    <%   for(let i=0; i< Chats.length; i++) { %>
     document.getElementById("<%= Chats[i][1] %>").addEventListener('click',()=>{
         
         document.querySelector(".chat-box").classList.remove("hidden");
-        var chatId = "<%= Chats[i][1] %>";
-        console.log(chatId);
-        var form = document.getElementById("myForm");
-        var action = form.getAttribute("action");
-        form.setAttribute("action", action.replace(":chatId", chatId));
-        document.getElementById("itemId").value = chatId;
-         form.submit();
-        //console.log("chats");
+         chatId = "<%= Chats[i][1] %>";
+         userid = "<%= id %>";
+        console.log(chatId,userid); 
+        fetchMessages(chatId,userid);
+        
       });
 <% } %>
     
